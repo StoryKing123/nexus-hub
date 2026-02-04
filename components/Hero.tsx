@@ -1,42 +1,58 @@
 import React from 'react';
-import { SearchState } from '../types';
+import { Tool } from '../types';
+import { Badge } from './ui/Badge';
 
-interface HeroProps {
-  searchState: SearchState;
-  setSearchState: React.Dispatch<React.SetStateAction<SearchState>>;
+interface ToolHeaderProps {
+  tool?: Tool | null;
+  onMenuClick?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ searchState, setSearchState }) => {
+export const Hero: React.FC<ToolHeaderProps> = ({ tool, onMenuClick }) => {
+  if (!tool) return null;
+
   return (
-    <div className="relative flex flex-col items-center justify-center px-4 py-24 text-center z-10">
-      <div className="inline-flex items-center rounded-full border border-border bg-background/50 px-3 py-1 text-sm text-muted-foreground backdrop-blur-sm mb-6 shadow-sm">
-        <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500"></span>
-        Curated Directory of Future Tools
+    <div className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-20 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-4 flex-1 overflow-hidden">
+        {/* Mobile Menu Button */}
+        <button 
+          onClick={onMenuClick} 
+          className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground focus:outline-none rounded-md"
+        >
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+
+        <div className="flex items-center gap-3 overflow-hidden">
+           <div className="h-10 w-10 flex-shrink-0 rounded-lg border border-border bg-secondary p-1.5 hidden sm:block">
+              <img src={tool.icon} alt={tool.name} className="h-full w-full object-contain" />
+           </div>
+           <div className="min-w-0">
+              <h1 className="text-lg font-bold text-foreground leading-tight truncate flex items-center gap-2">
+                {tool.name}
+                {tool.featured && <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" title="Featured"></span>}
+              </h1>
+              <p className="text-xs text-muted-foreground truncate max-w-md">{tool.description}</p>
+           </div>
+        </div>
       </div>
       
-      <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-7xl mb-6">
-        Discover the <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Nexus</span> <br className="hidden sm:block" /> of Innovation
-      </h1>
-      
-      <p className="max-w-2xl text-lg text-muted-foreground mb-10">
-        Explore a hand-picked collection of the best developer tools, design resources, and software. 
-        Built for modern creators.
-      </p>
-
-      <div className="w-full max-w-xl relative group">
-        <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 opacity-20 blur transition duration-1000 group-hover:opacity-40 group-hover:duration-200"></div>
-        <div className="relative flex items-center bg-background rounded-lg shadow-xl ring-1 ring-border">
-          <div className="pl-4 text-muted-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </div>
-          <input 
-            type="text"
-            value={searchState.query}
-            onChange={(e) => setSearchState(prev => ({ ...prev, query: e.target.value }))}
-            placeholder="Search for tools, tags, or categories..."
-            className="w-full bg-transparent border-none p-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
-          />
-        </div>
+      <div className="flex items-center gap-3">
+         <div className="hidden lg:flex gap-1">
+            {tool.tags.slice(0, 2).map(tag => (
+               <Badge key={tag} variant="secondary" className="text-[10px] h-6 px-2">{tag}</Badge>
+            ))}
+         </div>
+         <div className="h-6 w-px bg-border hidden sm:block"></div>
+         <a 
+            href={tool.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 whitespace-nowrap"
+         >
+            Open Site 
+            <svg className="ml-2 -mr-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+         </a>
       </div>
     </div>
   );

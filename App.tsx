@@ -1,29 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Hero } from './components/Hero';
-import { ToolCard } from './components/ToolCard';
-import { ThemeToggle } from './components/ui/ThemeToggle';
+import { Sidebar } from './components/Sidebar';
 import { TOOLS } from './constants';
-import { Category, SearchState, Tool } from './types';
+import { Tool } from './types';
 
 const App = () => {
-  const [searchState, setSearchState] = useState<SearchState>({
-    query: '',
-    category: Category.ALL
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  // Initialize with the first tool or null
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(TOOLS[0]);
   const [filteredTools, setFilteredTools] = useState<Tool[]>(TOOLS);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Filter tools logic
   const performFiltering = useCallback(() => {
     let result = TOOLS;
 
-    // 1. Category Filter
-    if (searchState.category !== Category.ALL) {
-      result = result.filter(tool => tool.category === searchState.category);
-    }
-
-    // 2. Query Filter (Standard String Matching)
-    if (searchState.query.trim()) {
-      const q = searchState.query.toLowerCase();
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
       result = result.filter(tool => 
         tool.name.toLowerCase().includes(q) ||
         tool.description.toLowerCase().includes(q) ||
@@ -32,7 +25,7 @@ const App = () => {
     }
 
     setFilteredTools(result);
-  }, [searchState.category, searchState.query]);
+  }, [searchQuery]);
 
   // Debounce effect for search
   useEffect(() => {
@@ -44,106 +37,77 @@ const App = () => {
   }, [performFiltering]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
-      {/* Background Decor */}
-      <div className="fixed inset-0 z-0 grid-bg pointer-events-none opacity-100"></div>
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+    <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300 font-sans">
+      
+      {/* Mobile Sidebar Overlay */}
+       {mobileMenuOpen && (
+         <div 
+           className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+           onClick={() => setMobileMenuOpen(false)}
+         />
+       )}
 
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur-md transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <span className="font-bold text-white text-lg">N</span>
-            </div>
-            <span className="font-bold text-xl tracking-tight text-foreground">NexusHub</span>
-          </div>
-          
-          <div className="flex items-center space-x-6">
-            <nav className="hidden md:flex items-center space-x-6">
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Submit Tool</a>
-              <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</a>
-            </nav>
-            
-            <div className="flex items-center space-x-4 border-l border-border pl-6">
-               <ThemeToggle />
-               <a href="https://github.com" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-               </a>
-            </div>
-          </div>
-        </div>
-      </header>
+       {/* Sidebar */}
+       <div className={`
+         fixed md:static inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out shadow-xl md:shadow-none
+         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+       `}>
+         <Sidebar 
+            tools={filteredTools}
+            selectedToolId={selectedTool?.id}
+            onSelectTool={(tool) => {
+              setSelectedTool(tool);
+              setMobileMenuOpen(false);
+            }}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+         />
+       </div>
 
-      <main className="relative z-10 pt-16 pb-24">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10 bg-secondary/20">
         <Hero 
-          searchState={searchState} 
-          setSearchState={setSearchState} 
+          tool={selectedTool} 
+          onMenuClick={() => setMobileMenuOpen(true)}
         />
 
-        {/* Categories */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-          <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar justify-start md:justify-center">
-             {Object.values(Category).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSearchState(prev => ({ ...prev, category: cat }))}
-                  className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                    searchState.category === cat
-                      ? 'bg-foreground text-background shadow-lg'
-                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground border border-border'
-                  }`}
-                >
-                  {cat}
-                </button>
-             ))}
-          </div>
-        </div>
-
-        {/* Results Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">
-                {searchState.query 
-                  ? `Results for "${searchState.query}"` 
-                  : searchState.category === Category.ALL 
-                    ? "Featured Tools" 
-                    : `${searchState.category} Tools`}
-              </h2>
-              <span className="text-sm text-muted-foreground">{filteredTools.length} resources found</span>
-           </div>
-
-           {filteredTools.length > 0 ? (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTools.map(tool => (
-                  <ToolCard key={tool.id} tool={tool} />
-                ))}
+        <main className="flex-1 overflow-hidden relative w-full h-full">
+           {selectedTool ? (
+             <div className="w-full h-full flex flex-col">
+                <div className="flex-1 relative bg-white">
+                  {/* Iframe Loading/Disclaimer Overlay - Visually behind the iframe */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-zinc-50 dark:bg-zinc-900 -z-10">
+                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+                     <p className="text-muted-foreground">Loading {selectedTool.name}...</p>
+                     <p className="text-xs text-muted-foreground/60 mt-2 max-w-md">
+                       If the content doesn't appear, the website might prevent embedding. 
+                       <br/>Use the "Open Site" button above.
+                     </p>
+                  </div>
+                  
+                  <iframe 
+                    key={selectedTool.id} // Re-mount on tool change to ensure history reset
+                    src={selectedTool.url}
+                    className="w-full h-full border-0"
+                    title={`${selectedTool.name} Preview`}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-presentation"
+                    loading="lazy"
+                  />
+                </div>
              </div>
            ) : (
-             <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border rounded-xl bg-card/30">
-                <div className="bg-secondary p-4 rounded-full mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 mb-6">
+                  <span className="font-bold text-white text-3xl">N</span>
                 </div>
-                <p className="text-muted-foreground text-lg font-medium">No tools found</p>
-                <p className="text-muted-foreground/70 text-sm mt-2">Try adjusting your search or category filter.</p>
+                <h2 className="text-2xl font-bold text-foreground">Welcome to NexusHub</h2>
+                <p className="text-muted-foreground mt-2 max-w-md">
+                  Select a tool from the sidebar to preview it directly in this window.
+                </p>
              </div>
            )}
-        </div>
-      </main>
-
-      <footer className="border-t border-border bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-             <span className="font-bold text-lg text-foreground">NexusHub</span>
-             <p className="text-sm text-muted-foreground mt-1">Curating the internet, one tool at a time.</p>
-          </div>
-          <div className="flex space-x-6">
-             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Twitter</a>
-          </div>
-        </div>
-      </footer>
+        </main>
+      </div>
     </div>
   );
 };
