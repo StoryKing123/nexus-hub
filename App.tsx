@@ -6,10 +6,13 @@ import { Tool } from './types';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  // Initialize with the first tool or null
   const [selectedTool, setSelectedTool] = useState<Tool | null>(TOOLS[0]);
   const [filteredTools, setFilteredTools] = useState<Tool[]>(TOOLS);
+  
+  // Layout States
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   // Filter tools logic
   const performFiltering = useCallback(() => {
@@ -47,30 +50,56 @@ const App = () => {
          />
        )}
 
-       {/* Sidebar */}
+       {/* Sidebar Container */}
        <div className={`
-         fixed md:static inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out shadow-xl md:shadow-none
-         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+         fixed md:static inset-y-0 left-0 z-50 
+         transform transition-all duration-300 ease-in-out 
+         shadow-xl md:shadow-none overflow-hidden bg-card
+         ${mobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
+         ${isSidebarOpen ? 'md:w-72' : 'md:w-0'}
        `}>
-         <Sidebar 
-            tools={filteredTools}
-            selectedToolId={selectedTool?.id}
-            onSelectTool={(tool) => {
-              setSelectedTool(tool);
-              setMobileMenuOpen(false);
-            }}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-         />
+         <div className="w-72 h-full"> {/* Inner container to maintain width during collapse */}
+           <Sidebar 
+              tools={filteredTools}
+              selectedToolId={selectedTool?.id}
+              onSelectTool={(tool) => {
+                setSelectedTool(tool);
+                setMobileMenuOpen(false);
+              }}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+           />
+         </div>
        </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10 bg-secondary/20">
-        <Hero 
-          tool={selectedTool} 
-          onMenuClick={() => setMobileMenuOpen(true)}
-        />
+        
+        {/* Header (Hero) */}
+        {isHeaderVisible && (
+          <Hero 
+            tool={selectedTool} 
+            onMenuClick={() => setMobileMenuOpen(true)}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            onHideHeader={() => setIsHeaderVisible(false)}
+          />
+        )}
 
+        {/* Floating Restore UI Button (Visible when header is hidden) */}
+        {!isHeaderVisible && (
+          <button
+            onClick={() => setIsHeaderVisible(true)}
+            className="absolute top-4 right-4 z-50 p-2 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-foreground hover:text-background transition-all"
+            title="Show Header"
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+          </button>
+        )}
+        
+        {/* Floating Sidebar Toggle (Visible when Sidebar is closed AND header is visible, optional convenience, or relying on Header button) */}
+        {/* Actually, if Header is hidden, user probably wants immersive. But if sidebar is closed via Header button, we have the button in Header. */}
+        
         <main className="flex-1 overflow-hidden relative w-full h-full">
            {selectedTool ? (
              <div className="w-full h-full flex flex-col">
@@ -104,6 +133,9 @@ const App = () => {
                 <p className="text-muted-foreground mt-2 max-w-md">
                   Select a tool from the sidebar to preview it directly in this window.
                 </p>
+                <div className="mt-8 flex gap-4">
+                  <button onClick={() => setIsSidebarOpen(true)} className="text-indigo-500 hover:underline">Open Sidebar</button>
+                </div>
              </div>
            )}
         </main>
